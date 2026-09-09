@@ -1,6 +1,6 @@
 # 러닝으로 만드는 AI 생활안전망
 
-청년러닝방범대 앱 **프로토타입 웹 데모**입니다. 별도 빌드나 서버 없이 `docs/index.html` 하나로 동작합니다.
+청년러닝방범대 앱 **프로토타입 웹 데모**입니다. 별도 빌드나 서버 없이 `index.html` 하나로 동작합니다.
 
 ## 데모
 
@@ -10,10 +10,10 @@ GitHub Pages를 켜면 아래 주소에서 바로 열립니다.
 https://haemin001015-lgtm.github.io/running-ai-safety/
 ```
 
-로컬에서 볼 때는 `docs/index.html`을 브라우저로 열거나:
+로컬에서 볼 때는 `index.html`을 브라우저로 열거나:
 
 ```bash
-cd docs && python3 -m http.server 8000
+python3 -m http.server 8000
 ```
 
 ## 화면 구성
