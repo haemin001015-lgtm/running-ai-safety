@@ -7,7 +7,7 @@
 GitHub Pages를 켜면 아래 주소에서 바로 열립니다.
 
 ```
-https://<username>.github.io/running-ai-safety-net/
+https://haemin001015-lgtm.github.io/running-ai-safety/
 ```
 
 로컬에서 볼 때는 `index.html`을 브라우저로 열거나:
