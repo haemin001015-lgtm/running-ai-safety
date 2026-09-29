@@ -481,11 +481,29 @@ $('stReset').addEventListener('click',function(){
 });
 $('syncBtn').addEventListener('click',function(){ N.syncNow(true); });
 
+/* ───────── 크루장이 보낸 설정 링크 처리 (?setup=...) ───────── */
+function applySetupLink(){
+  var m=(location.search||'').match(/[?&]setup=([^&]+)/); if(!m) return false;
+  try{
+    var raw=decodeURIComponent(m[1]).replace(/-/g,'+').replace(/_/g,'/');
+    var cfg=JSON.parse(decodeURIComponent(escape(atob(raw))));
+    if(!cfg.u) return false;
+    S.remote={url:String(cfg.u), token:String(cfg.t||'')};
+    if(cfg.c) S.course={nm:cfg.c.nm||'', why:cfg.c.why||'', dist:cfg.c.dist||'', time:cfg.c.time||'', spots:cfg.c.spots||''};
+    if(!S.device) S.device='d'+Math.random().toString(36).slice(2,10);
+    N.save();
+    try{ history.replaceState(null,'',location.pathname); }catch(e){}
+    return true;
+  }catch(e){ return false; }
+}
+
 /* ───────── 시작 ───────── */
 N.load();
+var linked=applySetupLink();
 if(!S.device) S.device='d'+Math.random().toString(36).slice(2,10);
 fillSpots(); renderChips(); render(); runUI();
 if(!S.profile) openOnboard();
+if(linked) toast('팀 저장소가 연결되었습니다');
 N.setSync(S.remote.url?'ok':'off', S.remote.url?'동기화 준비됨':'이 기기에만 저장됨');
 N.syncNow();
 window.addEventListener('online',function(){ N.syncNow(); });
