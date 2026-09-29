@@ -14,7 +14,7 @@ var COURSES=[
   pts:[[37.406657,126.971596],[37.407739,126.967922],[37.405721,126.957919],[37.405484,126.946974]],
   marks:['관양119안전센터','관악초','현대A','종합운동장']},
  {id:'3', nm:'방범코스 3', km:3.6,
-  sub:'관양119안전센터 → 관악초 → 동편마을 → 현대A → 종합운동장 · 트랙 러닝 3km',
+  sub:'관양119안전센터 → 관악초 → 동편마을 → 현대A → 종합운동장',
   pts:[[37.406657,126.971596],[37.407739,126.967922],[37.409104,126.971304],[37.405721,126.957919],[37.405484,126.946974]],
   marks:['관양119안전센터','관악초','동편마을','현대A','종합운동장']},
  {id:'etc', nm:'기타', km:0,
@@ -41,6 +41,7 @@ var TYPES=[
 ];
 var STEPS=['발견','신고','처리','개선'];
 var HOTSPOTS=(window.HOTSPOTS||[]);
+var LIGHTS=(window.LIGHTS||[]);
 function typeOf(n){ for(var i=0;i<TYPES.length;i++) if(TYPES[i].t===n) return TYPES[i]; return TYPES[TYPES.length-1]; }
 function classify(m){
   var s=(m||'').toLowerCase();
@@ -185,7 +186,7 @@ function docText(c){
     +'청년러닝방범대 야간 정기순찰 중 확인'
     +(S.profile? '\n기록: '+S.profile.name+' ('+S.profile.crew+')':'');
 }
-window.__nw={S:S,TYPES:TYPES,COURSES:COURSES,STEPS:STEPS,HOTSPOTS:HOTSPOTS,VER:VER,
+window.__nw={S:S,TYPES:TYPES,COURSES:COURSES,STEPS:STEPS,HOTSPOTS:HOTSPOTS,LIGHTS:LIGHTS,VER:VER,
   cluster:cluster,classify:classify,docText:docText,api:api,syncNow:syncNow,save:save,load:load,
   typeOf:typeOf,courseOf:courseOf,kmOf:kmOf,uid:uid,dist:dist,esc:esc,fmtDate:fmtDate,hms:hms,
   $:$,setSync:setSync,allReports:allReports,pending:pending};
@@ -193,7 +194,7 @@ window.__nw={S:S,TYPES:TYPES,COURSES:COURSES,STEPS:STEPS,HOTSPOTS:HOTSPOTS,VER:V
 
 (function(){
 'use strict';
-var N=window.__nw, S=N.S, $=N.$, esc=N.esc, TYPES=N.TYPES, STEPS=N.STEPS, COURSES=N.COURSES, HOTSPOTS=N.HOTSPOTS;
+var N=window.__nw, S=N.S, $=N.$, esc=N.esc, TYPES=N.TYPES, STEPS=N.STEPS, COURSES=N.COURSES, HOTSPOTS=N.HOTSPOTS, LIGHTS=N.LIGHTS||[];
 var tmr; window.toast=function(m){ var t=$('toast'); if(!t) return; t.textContent=m; t.classList.add('on');
   clearTimeout(tmr); tmr=setTimeout(function(){ t.classList.remove('on'); },2400); };
 var toast=window.toast;
@@ -204,6 +205,12 @@ function nearHot(c,m){
   if(!c.pts.length) return [];
   return HOTSPOTS.filter(function(h){
     return c.pts.some(function(p){ return N.dist(p[0],p[1],h.lat,h.lon)<=(m||500); });
+  });
+}
+function nearLights(c,m){
+  if(!c.pts.length) return [];
+  return LIGHTS.filter(function(g){
+    return c.pts.some(function(p){ return N.dist(p[0],p[1],g[0],g[1])<m; });
   });
 }
 function drawCourseMap(){
@@ -219,6 +226,11 @@ function drawCourseMap(){
   la0+=dla*0.12; la1-=dla*0.12; lo0-=dlo*0.12; lo1+=dlo*0.12;
   var px=function(v){ return pad+(v-lo0)/(lo1-lo0)*(W-2*pad); }, py=function(v){ return pad+(la0-v)/(la0-la1)*(H-2*pad); };
   var s='';
+  nearLights(cur(),260).forEach(function(g){
+    var x=px(g[1]), y=py(g[0]);
+    if(x<0||x>W||y<0||y>H) return;
+    s+='<circle cx="'+x.toFixed(1)+'" cy="'+y.toFixed(1)+'" r="2.2" fill="#FFC97A" fill-opacity=".55"/>';
+  });
   for(var g=1;g<5;g++){ s+='<line x1="'+(g*W/5)+'" y1="0" x2="'+(g*W/5)+'" y2="'+H+'" stroke="#fff" stroke-opacity=".04"/>'; }
   hots.forEach(function(h){
     var x=px(h.lon), y=py(h.lat);
@@ -254,7 +266,7 @@ function renderCourse(){
   $('courseWhy').textContent=c.sub||'';
   var hots=nearHot(c,500);
   $('csDist').innerHTML=c.pts.length? N.kmOf(c).toFixed(1)+'<span style="font-size:11px">km</span>':'–';
-  $('csSpots').textContent=c.pts.length? c.pts.length+'곳':'–';
+  $('csSpots').textContent=c.pts.length? nearLights(c,260).length+'개':'–';
   $('csRisk').textContent=c.pts.length? hots.length+'곳':'–';
   drawCourseMap();
 }
@@ -298,6 +310,11 @@ function drawMap(cs){
     s+='<line x1="'+(g*W/6)+'" y1="0" x2="'+(g*W/6)+'" y2="'+H+'" stroke="#fff" stroke-opacity=".04"/>';
     s+='<line x1="0" y1="'+(g*H/6)+'" x2="'+W+'" y2="'+(g*H/6)+'" stroke="#fff" stroke-opacity=".04"/>';
   }
+  nearLights(c,300).forEach(function(g){
+    var x=px(g[1]), y=py(g[0]);
+    if(x<pad-8||x>W-pad+8||y<pad-8||y>H-pad+8) return;
+    s+='<circle cx="'+x.toFixed(1)+'" cy="'+y.toFixed(1)+'" r="2.4" fill="#FFC97A" fill-opacity=".5"/>';
+  });
   if(c.pts.length>1) s+='<polyline points="'+c.pts.map(function(p){ return px(p[1]).toFixed(1)+','+py(p[0]).toFixed(1); }).join(' ')
       +'" fill="none" stroke="#A98CFF" stroke-width="3" stroke-opacity=".85" stroke-linecap="round" stroke-linejoin="round"/>';
   c.pts.forEach(function(p,k){

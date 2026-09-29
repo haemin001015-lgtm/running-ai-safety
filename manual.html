@@ -1,0 +1,235 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#0B0818">
+<meta name="description" content="청년러닝방범대 순찰 앱 사용 설명서">
+<title>순찰 앱 사용 설명서 · 청년러닝방범대</title>
+<link rel="icon" href="./icons/icon-192.png">
+<link rel="stylesheet" href="./assets/fonts.css">
+<style>
+:root{
+  --n0:#08060F; --n1:#120E24; --n2:#1B1538; --n3:#251D4C;
+  --ink:#F1EEFC; --ink2:#C7BFE8; --mut:#8F86B4; --fnt:#6A6190;
+  --line:#2C2452; --line2:#3B3170;
+  --pri:#A98CFF; --pri2:#7F5FE8; --priSoft:#241C48;
+  --lamp:#FFC97A; --lampSoft:#3B2B12; --alert:#FF7B9C; --ok:#5FD3AC; --okSoft:#0F3129;
+  color-scheme:dark;
+}
+*{box-sizing:border-box}
+html{scroll-snap-type:y mandatory;scroll-behavior:smooth}
+body{margin:0;background:var(--n0);color:var(--ink);
+  font-family:Paperlogy,"Apple SD Gothic Neo",Pretendard,system-ui,sans-serif;
+  line-height:1.65;word-break:keep-all;-webkit-font-smoothing:antialiased}
+@media (prefers-reduced-motion:reduce){html{scroll-behavior:auto}}
+section{min-height:100svh;scroll-snap-align:start;display:flex;flex-direction:column;justify-content:center;
+  padding:56px 24px 72px;max-width:1100px;margin:0 auto;position:relative}
+@media (min-width:900px){ section{padding:80px 48px 96px} }
+.eyebrow{font-size:13px;font-weight:800;letter-spacing:.14em;color:var(--pri);margin-bottom:14px}
+h1{font-size:clamp(34px,7vw,72px);font-weight:900;letter-spacing:-.035em;line-height:1.1;margin:0 0 18px;text-wrap:balance}
+h2{font-size:clamp(26px,4.6vw,46px);font-weight:800;letter-spacing:-.03em;line-height:1.2;margin:0 0 10px;text-wrap:balance}
+h2 b{color:var(--pri)}
+p.lead{font-size:clamp(15px,2.2vw,20px);color:var(--ink2);margin:0 0 28px;font-weight:500}
+.row{display:grid;gap:26px;align-items:center}
+@media (min-width:860px){ .row.two{grid-template-columns:1fr 340px} .row.two.rev{grid-template-columns:340px 1fr} }
+.shot{width:100%;max-width:300px;margin:0 auto;display:block;border-radius:22px;border:1px solid var(--line2);
+  box-shadow:0 24px 60px rgba(0,0,0,.5)}
+ol.steps{list-style:none;counter-reset:s;padding:0;margin:0;display:flex;flex-direction:column;gap:16px}
+ol.steps li{counter-increment:s;display:grid;grid-template-columns:38px 1fr;gap:14px;align-items:start;
+  font-size:clamp(15px,2vw,19px);font-weight:600}
+ol.steps li::before{content:counter(s);width:32px;height:32px;border-radius:11px;background:var(--priSoft);color:var(--pri);
+  display:grid;place-items:center;font-size:15px;font-weight:800}
+ol.steps li small{display:block;font-size:14px;font-weight:500;color:var(--mut);margin-top:3px}
+.cards{display:grid;gap:14px;grid-template-columns:repeat(auto-fit,minmax(210px,1fr))}
+.card{background:var(--n2);border:1px solid var(--line);border-radius:18px;padding:18px}
+.card h3{margin:0 0 6px;font-size:19px;font-weight:800;letter-spacing:-.02em}
+.card p{margin:0;font-size:14.5px;color:var(--ink2);font-weight:500}
+.card .ic{font-size:22px;display:block;margin-bottom:8px}
+.card.lamp{border-color:rgba(255,201,122,.4)} .card.lamp h3{color:var(--lamp)}
+.qa{display:flex;flex-direction:column;gap:14px}
+.qa div{background:var(--n1);border:1px solid var(--line);border-radius:16px;padding:16px 18px}
+.qa b{display:block;font-size:16.5px;font-weight:800;margin-bottom:5px}
+.qa span{font-size:14.5px;color:var(--ink2);font-weight:500}
+.note{margin-top:22px;background:var(--lampSoft);border:1px solid rgba(255,201,122,.45);border-radius:16px;
+  padding:16px 18px;font-size:15px;color:var(--lamp);font-weight:700}
+.note span{display:block;color:var(--ink2);font-weight:500;margin-top:5px;font-size:14px}
+.big{font-size:clamp(30px,5vw,54px);font-weight:900;color:var(--lamp);letter-spacing:-.03em}
+a.btn{display:inline-block;margin-top:26px;background:linear-gradient(135deg,var(--pri2),var(--pri));color:#12082E;
+  text-decoration:none;font-weight:800;font-size:17px;padding:15px 26px;border-radius:14px}
+.foot{position:absolute;left:24px;right:24px;bottom:22px;display:flex;justify-content:space-between;
+  font-size:12px;color:var(--fnt);font-weight:600}
+@media (min-width:900px){ .foot{left:48px;right:48px} }
+.dots{position:fixed;right:14px;top:50%;transform:translateY(-50%);display:none;flex-direction:column;gap:9px;z-index:5}
+@media (min-width:900px){ .dots{display:flex} }
+.dots a{width:8px;height:8px;border-radius:50%;background:var(--line2);display:block}
+.dots a.on{background:var(--pri);transform:scale(1.3)}
+.hero{background:radial-gradient(900px 480px at 50% 0%,#2A2160 0%,rgba(42,33,96,0) 65%)}
+.url{font-family:ui-monospace,Menlo,monospace;font-size:clamp(16px,3vw,24px);color:var(--pri);font-weight:700}
+</style>
+</head>
+<body>
+
+<nav class="dots" id="dots" aria-label="쪽 이동"></nav>
+
+<section class="hero" id="s1">
+  <div class="eyebrow">청년러닝방범대</div>
+  <h1>순찰 앱<br>사용 설명서</h1>
+  <p class="lead">달리면서 발견한 밤길 위험을 기록하고,<br>민원까지 연결하는 앱입니다. 5분이면 익힙니다.</p>
+  <div class="url">cyouthlab.co.kr</div>
+  <a class="btn" href="https://cyouthlab.co.kr">앱 열기</a>
+  <div class="foot"><span>중앙청년LAB × 성균관대학교 AXIS Lab</span><span>1 / 9</span></div>
+</section>
+
+<section id="s2">
+  <div class="eyebrow">시작하기</div>
+  <h2>처음 한 번만 <b>이름</b>을 넣으면 됩니다</h2>
+  <p class="lead">가입도, 설치도, 설정도 없습니다.</p>
+  <div class="row two">
+    <ol class="steps">
+      <li>폰 브라우저에서 <b>cyouthlab.co.kr</b> 열기<small>카톡으로 받은 링크를 눌러도 됩니다</small></li>
+      <li>이름과 소속 조 입력 후 <b>시작하기</b><small>다음부터는 물어보지 않습니다</small></li>
+      <li>홈 화면에 추가하기<small>아이폰: 공유 → 홈 화면에 추가<br>안드로이드: 메뉴(⋮) → 앱 설치 / 홈 화면에 추가</small></li>
+      <li>위치 권한 <b>허용</b><small>제보한 자리를 지도에 표시하려면 필요합니다</small></li>
+    </ol>
+    <img class="shot" src="./assets/guide/1-home.jpg" alt="앱 첫 화면">
+  </div>
+  <div class="foot"><span>순찰 앱 사용 설명서</span><span>2 / 9</span></div>
+</section>
+
+<section id="s3">
+  <div class="eyebrow">순찰하기</div>
+  <h2>코스를 고르고 <b>순찰 시작</b>을 누르세요</h2>
+  <p class="lead">매주 월·수 저녁 7시 30분 ~ 9시</p>
+  <div class="row two">
+    <ol class="steps">
+      <li>오늘 달릴 코스 고르기<small>방범코스 1 · 2 · 3, 그 외에는 기타</small></li>
+      <li><b>순찰 시작</b> 누르기<small>시간이 자동으로 재집니다</small></li>
+      <li>코스를 돌며 위험한 곳 제보하기</li>
+      <li>마치면 <b>순찰 종료</b><small>순찰 시간과 코스 거리가 내 기록에 쌓입니다</small></li>
+    </ol>
+    <img class="shot" src="./assets/guide/1-home.jpg" alt="코스 선택 화면">
+  </div>
+  <div class="note">지도의 점이 무슨 뜻이냐면<span><b style="color:var(--alert)">분홍 점</b> 실제 교통사고가 잦았던 곳 (TAAS 사고다발지역) · <b style="color:var(--lamp)">노란 점</b> 보안등 위치 (공공데이터포털 전국보안등정보) · <b style="color:var(--pri)">보라 선</b> 오늘의 코스<br>노란 점이 있는데 실제로 어두우면, 그 등이 꺼졌거나 가려졌다는 뜻입니다. 꼭 제보해 주세요.</span></div>
+  <div class="foot"><span>순찰 앱 사용 설명서</span><span>3 / 9</span></div>
+</section>
+
+<section id="s4">
+  <div class="eyebrow">제보하기</div>
+  <h2>사진 찍고, <b>한 줄</b>만 쓰면 끝</h2>
+  <p class="lead">어려운 용어를 쓸 필요 없습니다. 평소 말로 적으세요.</p>
+  <div class="row two rev">
+    <img class="shot" src="./assets/guide/2-report.jpg" alt="제보 화면">
+    <ol class="steps">
+      <li>아래 <b>제보</b> 탭 누르기</li>
+      <li>사진 찍기<small>얼굴이나 차량번호가 나오지 않게 찍어주세요</small></li>
+      <li>위치 확인<small>자동으로 잡힙니다. 안 잡히면 “다시 잡기”</small></li>
+      <li>무엇이 문제인지 한 줄 쓰기<small>예: 여기 가로등 하나 꺼져있음</small></li>
+      <li><b>제보 등록</b> 누르기<small>유형은 AI가 자동으로 고릅니다. 틀리면 직접 고르세요</small></li>
+    </ol>
+  </div>
+  <div class="foot"><span>순찰 앱 사용 설명서</span><span>4 / 9</span></div>
+</section>
+
+<section id="s5">
+  <div class="eyebrow">무엇을 기록하나</div>
+  <h2>가로등만이 아닙니다</h2>
+  <p class="lead">밤에 걷는 사람이 위험할 만한 것은 모두 기록 대상입니다.</p>
+  <div class="cards">
+    <div class="card lamp"><span class="ic">💡</span><h3>빛</h3><p>꺼진 보안등, 너무 어두운 골목, 나뭇가지에 가린 불빛<br><b style="color:var(--lamp)">지도의 노란 점이 보안등 위치입니다</b></p></div>
+    <div class="card"><span class="ic">🚦</span><h3>건널목</h3><p>지워진 횡단보도 선, 고장 난 보행신호, 불법주차로 가려진 시야</p></div>
+    <div class="card"><span class="ic">🧱</span><h3>보행로</h3><p>들뜬 보도블록, 단차, 길을 막은 적치물, 물고임과 낙엽</p></div>
+    <div class="card"><span class="ic">🔔</span><h3>안전시설</h3><p>고장 난 비상벨, CCTV 사각지대, 부서진 반사경·안전표지</p></div>
+  </div>
+  <div class="note">애매하면 일단 남겨주세요<span>같은 자리에 여러 번 쌓인 제보는 자동으로 하나로 묶이고, 사고가 잦았던 곳과 가까울수록 먼저 고칠 곳으로 올라갑니다.</span></div>
+  <div class="foot"><span>순찰 앱 사용 설명서</span><span>5 / 9</span></div>
+</section>
+
+<section id="s6">
+  <div class="eyebrow">이상이 없던 날</div>
+  <h2>아무 일 없었던 것도 <b>기록</b>입니다</h2>
+  <p class="lead">제보가 한 건도 없이 순찰을 마치면 이렇게 물어봅니다.</p>
+  <div class="row two">
+    <div>
+      <p style="font-size:clamp(17px,2.6vw,22px);font-weight:700;margin:0 0 14px">“이번 순찰, 특이사항이 있었나요?”</p>
+      <ol class="steps">
+        <li><b>이상 없음으로 기록</b><small>순찰을 돌았고 문제가 없었다는 뜻으로 남습니다</small></li>
+        <li><b>제보 남기기</b><small>빠뜨린 게 있으면 바로 제보 화면으로 갑니다</small></li>
+      </ol>
+      <p style="color:var(--mut);font-size:14.5px;margin-top:18px">이상 없음도 활동 실적입니다. 그날 코스가 안전했다는 근거가 됩니다.</p>
+    </div>
+    <img class="shot" src="./assets/guide/3-noissue.jpg" alt="이상 없음 확인 화면">
+  </div>
+  <div class="foot"><span>순찰 앱 사용 설명서</span><span>6 / 9</span></div>
+</section>
+
+<section id="s7">
+  <div class="eyebrow">내 활동</div>
+  <h2>봉사시간이 <b>자동으로</b> 쌓입니다</h2>
+  <div class="row two rev">
+    <img class="shot" src="./assets/guide/4-me.jpg" alt="내 활동 화면">
+    <div>
+      <div class="big">누적 봉사시간 · 거리 · 제보 수</div>
+      <p class="lead" style="margin-top:14px">순찰을 마칠 때마다 시간과 코스 거리가 더해집니다.<br>1365 자원봉사포털 실적 등록에 쓰입니다.</p>
+      <div class="cards" style="grid-template-columns:1fr 1fr">
+        <div class="card"><h3>순찰 횟수</h3><p>순찰 시작~종료를 한 번 할 때마다</p></div>
+        <div class="card"><h3>개선 확인</h3><p>내가 올린 제보가 실제로 고쳐진 수</p></div>
+      </div>
+    </div>
+  </div>
+  <div class="foot"><span>순찰 앱 사용 설명서</span><span>7 / 9</span></div>
+</section>
+
+<section id="s8">
+  <div class="eyebrow">이럴 땐 이렇게</div>
+  <h2>자주 묻는 것</h2>
+  <div class="qa">
+    <div><b>인터넷이 안 터지는 골목입니다</b><span>그대로 제보하세요. 폰에 저장해 뒀다가 신호가 잡히면 자동으로 보냅니다. 화면 위쪽에 “○건 전송 대기”로 표시됩니다.</span></div>
+    <div><b>위치가 안 잡혀요</b><span>“다시 잡기”를 눌러보고, 그래도 안 되면 폰 설정에서 브라우저의 위치 권한을 허용해 주세요. 건물 안에서는 오차가 큽니다.</span></div>
+    <div><b>이름을 또 물어봐요</b><span>브라우저 기록을 지웠거나 다른 브라우저로 열었을 때 그렇습니다. 이름만 다시 넣으면 됩니다. 이미 보낸 제보는 그대로 있습니다.</span></div>
+    <div><b>사진은 꼭 찍어야 하나요</b><span>없어도 등록됩니다. 다만 사진이 있으면 민원이 훨씬 잘 처리됩니다. 사람 얼굴과 차량번호는 피해주세요.</span></div>
+    <div><b>화면이 예전 그대로예요</b><span>새로고침하면 최신으로 바뀝니다. 홈 화면 앱으로 열었다면 앱을 완전히 닫았다 다시 열어주세요.</span></div>
+    <div><b>잘못 올렸어요</b><span>앱에서 지우는 기능은 없습니다. 크루장에게 말씀해 주시면 기록에서 정리합니다.</span></div>
+  </div>
+  <div class="foot"><span>순찰 앱 사용 설명서</span><span>8 / 9</span></div>
+</section>
+
+<section id="s9">
+  <div class="eyebrow">크루장용</div>
+  <h2>모인 기록으로 <b>민원까지</b></h2>
+  <div class="cards">
+    <div class="card"><span class="ic">🗺️</span><h3>위험지도</h3><p>대원들의 제보가 모여 지점별 위험 순위가 만들어집니다. 지점을 누르면 상세가 열립니다.</p></div>
+    <div class="card"><span class="ic">📄</span><h3>민원 문안</h3><p>위치·유형·반복 관측·인근 사고이력·데이터 출처가 담긴 문안이 자동으로 만들어집니다. 복사해서 안전신문고에 붙여넣으세요.</p></div>
+    <div class="card"><span class="ic">✅</span><h3>상태 바꾸기</h3><p>발견 → 신고 → 처리 → 개선 순으로 눌러 진행 상황을 남깁니다. 모든 대원 화면에 함께 반영됩니다.</p></div>
+    <div class="card"><span class="ic">📊</span><h3>구글 시트</h3><p>제보와 순찰 기록이 시트에 쌓입니다. 봉사시간 집계와 결과보고서에 그대로 씁니다.</p></div>
+  </div>
+  <p style="color:var(--mut);font-size:14.5px;margin-top:20px">문의 · cyouthlab@naver.com</p>
+  <a class="btn" href="https://cyouthlab.co.kr">앱 열기 · cyouthlab.co.kr</a>
+  <div class="foot"><span>중앙청년LAB × 성균관대학교 AXIS Lab</span><span>9 / 9</span></div>
+</section>
+
+<script>
+(function(){
+  var secs=[].slice.call(document.querySelectorAll('section'));
+  var dots=document.getElementById('dots');
+  dots.innerHTML=secs.map(function(s,i){ return '<a href="#'+s.id+'" aria-label="'+(i+1)+'쪽"></a>'; }).join('');
+  var links=[].slice.call(dots.children);
+  var io=new IntersectionObserver(function(es){
+    es.forEach(function(e){
+      if(e.isIntersecting){
+        var i=secs.indexOf(e.target);
+        links.forEach(function(a,k){ a.className=k===i?'on':''; });
+      }
+    });
+  },{threshold:.5});
+  secs.forEach(function(s){ io.observe(s); });
+  addEventListener('keydown',function(e){
+    if(e.key!=='ArrowDown'&&e.key!=='ArrowUp'&&e.key!==' ') return;
+    var cur=secs.findIndex(function(s){ var r=s.getBoundingClientRect(); return r.top>-innerHeight*0.5 && r.top<innerHeight*0.5; });
+    var next=Math.max(0,Math.min(secs.length-1,cur+(e.key==='ArrowUp'?-1:1)));
+    secs[next].scrollIntoView(); e.preventDefault();
+  });
+})();
+</script>
+</body>
+</html>
