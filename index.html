@@ -23,7 +23,7 @@
 <link rel="icon" href="./favicon.ico" sizes="any">
 <link rel="icon" type="image/png" href="./icons/icon-192.png">
 <link rel="stylesheet" href="./assets/fonts.css">
-<link rel="stylesheet" href="./assets/app.css?v=12">
+<link rel="stylesheet" href="./assets/app.css?v=14">
 <title>AI 생활안전망 · 청년러닝방범대</title>
 </head>
 <body>
@@ -109,6 +109,10 @@
         </div>
         <button id="gpsBtn" type="button">다시 잡기</button>
       </div>
+      <div class="spotpick">
+        <div class="sph">코스 지점에서 고르기</div>
+        <div class="spchips" id="spotChips"></div>
+      </div>
 
       <div class="sect-t">3 · 무엇이 문제인가요</div>
       <textarea id="memo" rows="3" placeholder="평소 쓰는 말 그대로 적으세요. 예: 여기 가로등 하나 꺼져있음"></textarea>
@@ -155,20 +159,19 @@
         <div class="q"><div class="v c-pri" id="mRep">0</div><div class="l">제보</div></div>
         <div class="q"><div class="v c-ok" id="mFix">0</div><div class="l">개선 확인</div></div>
       </div>
-      <div class="sect-t">활동이 남기는 것</div>
-      <div class="card">
-        <div class="item" style="cursor:default">
-          <div class="ic" style="background:var(--priSoft)" aria-hidden="true">🗺️</div>
-          <div class="bd"><div class="t">우리 동네 야간 위험지도</div><div class="s">순찰 기록이 모여 지도가 됩니다</div></div>
-        </div>
-        <div class="item" style="cursor:default">
-          <div class="ic" style="background:var(--okSoft)" aria-hidden="true">🏛️</div>
-          <div class="bd"><div class="t">지역안전지수 반영</div><div class="s">자율방범대원 수 · 안전신문고 신고 건수</div></div>
-        </div>
-        <div class="item" style="cursor:default">
-          <div class="ic" style="background:var(--lampSoft)" aria-hidden="true">💡</div>
-          <div class="bd"><div class="t">실제로 고친 곳</div><div class="s" id="meLamp">0곳이 개선됐습니다</div></div>
-        </div>
+      <div class="sect-t">이번 시즌</div>
+      <div class="season">
+        <div class="sh"><b id="sRunT">0 / 7</b><span>정기 순찰</span></div>
+        <div class="sbar"><i id="sBar" style="width:0%"></i></div>
+        <div class="ss" id="sMsg">첫 순찰을 기다리고 있어요</div>
+      </div>
+
+      <div class="sect-t">배지</div>
+      <div class="badges" id="badges"></div>
+
+      <div class="slogan">
+        <div class="t">우리 동네를<br>한바퀴 더 안전하게</div>
+        <div class="s" id="sloganS">오늘 밤도 조심히, 그리고 즐겁게</div>
       </div>
     </section>
   </main>
@@ -217,7 +220,7 @@
     </div>
   </div>
 </div>
-<script src="./assets/data.js?v=12"></script>
-<script src="./assets/app.js?v=12"></script>
+<script src="./assets/data.js?v=14"></script>
+<script src="./assets/app.js?v=14"></script>
 </body>
 </html>

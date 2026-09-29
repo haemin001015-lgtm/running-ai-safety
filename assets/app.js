@@ -52,7 +52,7 @@ function classify(m){
 /* ───────── 상태 ───────── */
 var S={ profile:null, courseId:'1', courseKm:{}, remote:{url:DEFAULT_URL, token:''},
         reports:[], team:[], teamRuns:[], patrols:[], runs:0, secs:0, km:0, run:null, lastSync:0, device:'',
-        here:null, draft:{photo:null,lat:null,lon:null,acc:null}, syncing:false, retry:0 };
+        here:null, draft:{photo:null,lat:null,lon:null,acc:null,pick:null}, syncing:false, retry:0 };
 var $=function(id){ return document.getElementById(id); };
 function esc(t){ return String(t==null?'':t).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;'); }
 function uid(){ return 'r'+Date.now().toString(36)+Math.random().toString(36).slice(2,7); }
@@ -261,7 +261,11 @@ function renderCourse(){
     return '<button type="button" data-c="'+x.id+'"'+(x.id===S.courseId?' class="sel"':'')+'>'+esc(x.nm)+'</button>';
   }).join('');
   Array.prototype.forEach.call($('courseChips').querySelectorAll('button'),function(b){
-    b.addEventListener('click',function(){ S.courseId=b.getAttribute('data-c'); N.save(); renderCourse(); });
+    b.addEventListener('click',function(){
+      S.courseId=b.getAttribute('data-c');
+      if(S.draft.pick){ S.draft.pick=null; S.draft.lat=null; S.draft.lon=null; S.draft.acc=null; S.draft.spot=null; }
+      N.save(); renderCourse(); renderSpots();
+    });
   });
   $('courseNm').textContent=c.nm;
   $('courseWhy').textContent=c.sub||'';
@@ -406,7 +410,40 @@ function render(){
   $('mFix').textContent=cs.filter(function(c){ return c.st>=3 && c.items.some(function(r){ return T.reports.some(function(x){ return x.id===r.id; }); }); }).length;
   $('meNm').textContent=S.profile? S.profile.name:'대원';
   $('meRl').textContent='청년러닝방범대';
-  $('meLamp').textContent=cs.filter(function(c){ return c.st>=3; }).length+'곳이 개선됐습니다';
+  renderSeason(T, Number($('mFix').textContent)||0);
+}
+
+/* ── 시즌 진행 · 배지 ── */
+var SEASON_GOAL=7;                                  // 대회 기간 정기 순찰 횟수
+function renderSeason(T, fixed){
+  var done=Math.min(T.runs,SEASON_GOAL), pct=Math.round(done/SEASON_GOAL*100);
+  $('sRunT').textContent=T.runs+' / '+SEASON_GOAL;
+  $('sBar').style.width=Math.min(100,pct)+'%';
+  $('sMsg').textContent = T.runs===0 ? '첫 순찰을 기다리고 있어요'
+    : T.runs>=SEASON_GOAL ? '정기 순찰 전 회차 완주 · 고생 많았습니다'
+    : '앞으로 '+(SEASON_GOAL-T.runs)+'번 더 달리면 완주예요';
+
+  var courses={}; (S.patrols||[]).forEach(function(p){ if(p.course) courses[p.course]=1; });
+  (S.teamRuns||[]).forEach(function(p){ if(p.mine && p.course) courses[p.course]=1; });
+  var nCourse=Object.keys(courses).length;
+
+  var list=[
+    {ic:'🌙', t:'첫 순찰',    got:T.runs>=1},
+    {ic:'📝', t:'첫 제보',    got:T.reports.length>=1},
+    {ic:'🏃', t:'5km 돌파',   got:T.km>=5},
+    {ic:'🗺️', t:'코스 3개',   got:nCourse>=3},
+    {ic:'🔥', t:'순찰 5회',   got:T.runs>=5},
+    {ic:'💡', t:'개선 확인',  got:fixed>=1}
+  ];
+  $('badges').innerHTML=list.map(function(b){
+    return '<div class="badge'+(b.got?' got':'')+'"><span class="bi" aria-hidden="true">'+b.ic+'</span>'
+      +'<div class="bt">'+esc(b.t)+'</div></div>';
+  }).join('');
+
+  var got=list.filter(function(b){ return b.got; }).length;
+  $('sloganS').textContent = got===list.length ? '배지 6개 전부 모았습니다 🎉'
+    : T.runs===0 ? '오늘 밤, 첫 한 바퀴를 시작해 보세요'
+    : '오늘 밤도 조심히, 그리고 즐겁게';
 }
 N.render=render;
 
@@ -455,7 +492,7 @@ Array.prototype.forEach.call(document.querySelectorAll('.tab'),function(b){
     var go=b.getAttribute('data-go');
     Array.prototype.forEach.call(document.querySelectorAll('.screen'),function(s){ s.classList.remove('on'); });
     $('sc-'+go).classList.add('on'); $('screens').scrollTop=0;
-    if(go==='add' && S.draft.lat==null) grabGps();
+    if(go==='add'){ renderSpots(); if(S.draft.lat==null && !S.draft.pick) grabGps(); }
   });
 });
 
@@ -485,18 +522,52 @@ function nearestSpot(lat,lon){
     var d=N.dist(p[0],p[1],lat,lon); if(d<bd){ bd=d; best=(c.marks&&c.marks[i])||c.nm; } }); });
   return bd<=250? best : '현재 위치';
 }
+var gpsSeq=0;
 function grabGps(){
-  $('gpsDot').className='dot2 wait'; $('gpsNm').textContent='위치 확인 중…';
+  var my=++gpsSeq;
+  S.draft.pick=null;
+  $('gpsDot').className='dot2 wait'; $('gpsNm').textContent='위치 확인 중…'; $('gpsCo').textContent='–';
+  renderSpots();
   locate(function(h){
-    S.draft.lat=h.lat; S.draft.lon=h.lon; S.draft.acc=h.acc;
+    if(my!==gpsSeq) return;                       // 그 사이 지점을 직접 골랐으면 무시
+    S.draft.lat=h.lat; S.draft.lon=h.lon; S.draft.acc=h.acc; S.draft.pick=null;
     S.draft.spot=nearestSpot(h.lat,h.lon);
     $('gpsNm').textContent=S.draft.spot;
     $('gpsCo').textContent=h.lat.toFixed(6)+', '+h.lon.toFixed(6)+' · 오차 ±'+h.acc+'m';
     $('gpsDot').className='dot2'+(h.acc>50?' wait':'');
-    drawCourseMap();
+    renderSpots(); drawCourseMap();
   });
 }
 $('gpsBtn').addEventListener('click',grabGps);
+
+/* ── 위치: 코스에 적힌 지점을 직접 고르기 ── */
+function pickSpot(c,i){
+  gpsSeq++;                                        // 늦게 도착하는 GPS 결과가 선택을 덮지 않도록
+  var p=c.pts[i], nm=(c.marks&&c.marks[i])||c.nm;
+  S.draft.lat=p[0]; S.draft.lon=p[1]; S.draft.acc=null; S.draft.spot=nm; S.draft.pick=c.id+':'+i;
+  $('gpsDot').className='dot2';
+  $('gpsNm').textContent=nm;
+  $('gpsCo').textContent=p[0].toFixed(6)+', '+p[1].toFixed(6)+' · 코스 지점 선택';
+  renderSpots(); drawCourseMap();
+}
+function renderSpots(){
+  var c=cur(), box=$('spotChips');
+  if(!c.pts.length){
+    box.innerHTML='<div class="none">기타 코스에서는 현재 위치(GPS)로만 기록합니다</div>';
+    return;
+  }
+  var html=c.marks.map(function(nm,i){
+    return '<button type="button" data-i="'+i+'"'+(S.draft.pick===c.id+':'+i?' class="sel"':'')+'>'+esc(nm)+'</button>';
+  }).join('');
+  html+='<button type="button" data-i="gps"'+(S.draft.pick?'':' class="sel"')+'>📍 현재 위치</button>';
+  box.innerHTML=html;
+  Array.prototype.forEach.call(box.querySelectorAll('button'),function(b){
+    b.addEventListener('click',function(){
+      var v=b.getAttribute('data-i');
+      if(v==='gps') grabGps(); else pickSpot(c,+v);
+    });
+  });
+}
 $('photoIn').addEventListener('change',function(){
   var f=this.files&&this.files[0]; if(!f) return;
   var img=new Image(), url=URL.createObjectURL(f);
@@ -526,7 +597,7 @@ $('submitBtn').addEventListener('click',function(){
   S.reports.push({id:N.uid(), at:new Date().toISOString(), by:{name:S.profile.name,tail:S.profile.tail},
     course:cur().nm, lat:S.draft.lat, lon:S.draft.lon, acc:S.draft.acc, spot:S.draft.spot||'현재 위치',
     memo:memo, type:t.t, st:0, photo:S.draft.photo||'', synced:false});
-  $('memo').value=''; $('auto').classList.remove('show'); S.draft.type=null;
+  $('memo').value=''; $('auto').classList.remove('show'); S.draft.type=null; S.draft.pick=null;
   Array.prototype.forEach.call($('chips').querySelectorAll('button'),function(x){ x.classList.remove('sel'); });
   resetPhoto(); N.save(); render(); N.syncNow();
   document.querySelector('.tab[data-go=home]').click();
