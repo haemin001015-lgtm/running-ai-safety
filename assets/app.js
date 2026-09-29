@@ -50,7 +50,7 @@ var DEFAULT_COURSE={nm:'만안 1코스 · 벽산–중앙시장', why:'보행자
 /* ───────── 상태 ───────── */
 var S={ profile:null, course:{nm:DEFAULT_COURSE.nm,why:DEFAULT_COURSE.why,dist:'',time:'',spots:''}, remote:{url:DEFAULT_URL,token:''},
         reports:[], team:[], runs:0, secs:0, run:null, lastSync:0, device:'',
-        draft:{photo:null,lat:null,lon:null,acc:null,spot:'',type:null}, syncing:false };
+        draft:{photo:null,lat:null,lon:null,acc:null,spot:'',type:null}, syncing:false, retry:0 };
 var $=function(id){ return document.getElementById(id); };
 function esc(t){ return String(t==null?'':t).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
 function uid(){ return 'r'+Date.now().toString(36)+Math.random().toString(36).slice(2,7); }
@@ -112,15 +112,18 @@ function syncNow(manual){
         var mine=S.reports.filter(function(r){ return r.id===t.id; })[0];
         if(mine && t.st>mine.st) mine.st=t.st;
       });
-      S.lastSync=Date.now(); S.syncing=false; save(); if(window.__nw && window.__nw.render) window.__nw.render();
+      S.lastSync=Date.now(); S.syncing=false; S.retry=0; save(); if(window.__nw && window.__nw.render) window.__nw.render();
       setSync('ok','동기화됨 · '+new Date(S.lastSync).toLocaleTimeString('ko-KR',{hour:'2-digit',minute:'2-digit'}));
       if(manual) toast('팀 저장소와 동기화했습니다');
     })
     .catch(function(e){
       S.syncing=false;
-      var msg=e.message==='no-url'?'이 기기에만 저장됨':(pending().length? pending().length+'건 전송 대기':'동기화 실패');
+      var msg=e.message==='no-url'?'이 기기에만 저장됨':(pending().length? pending().length+'건 전송 대기 · 곧 다시 시도':'연결 확인 중…');
       setSync(e.message==='no-url'?'off':'warn', msg);
-      if(manual) toast(e.message==='bad-response'?'저장소 주소를 확인해 주세요':'동기화하지 못했습니다');
+      if(manual) toast(e.message==='bad-response'?'저장소 주소를 확인해 주세요':'동기화하지 못했습니다. 잠시 후 다시 시도합니다');
+      if(!manual && e.message!=='no-url' && navigator.onLine && S.retry<3){
+        S.retry++; setTimeout(function(){ syncNow(); }, 4000*S.retry);
+      }
     });
 }
 function toWire(r){
