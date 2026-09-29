@@ -3,11 +3,12 @@
 야간 순찰 중 발견한 밤길 위험을 기록하고, 민원 문안까지 만들어 주는 앱입니다.
 중앙청년LAB × 성균관대학교 AXIS Lab, 2026 자원봉사 아이디어톤 실행 과제.
 
-**앱 주소** → https://haemin001015-lgtm.github.io/running-ai-safety/
+**앱 주소** → https://cyouthlab.co.kr
+(기존 주소 https://haemin001015-lgtm.github.io/running-ai-safety/ 도 그대로 연결됩니다)
 
 ## 대원용 사용법
 
-1. 위 주소를 폰에서 엽니다.
+1. 위 주소(**cyouthlab.co.kr**)를 폰에서 엽니다.
 2. 처음 한 번 이름과 조를 입력합니다.
 3. **홈 화면에 추가**해 두면 앱처럼 열리고, 인터넷이 없어도 켜집니다.
    - 아이폰: 공유 → 홈 화면에 추가
