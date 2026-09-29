@@ -1,10 +1,10 @@
 /**
  * 청년러닝방범대 · AI 생활안전망 팀 저장소
  * 구글 시트에 제보를 모으는 Apps Script 웹앱입니다.
- * 설정: 아래 TOKEN을 팀만 아는 값으로 바꾸고, 배포 > 새 배포 > 웹 앱
- *      (실행: 나, 액세스: 모든 사용자)로 배포한 뒤 URL을 앱 설정에 붙여넣습니다.
+ * 배포: 배포 > 새 배포 > 웹 앱 (실행: 나, 액세스: 모든 사용자)
+ * 앱에 이 웹앱 주소가 들어 있어, 대원은 주소만 열면 바로 기록됩니다.
+ * 별도의 키는 쓰지 않습니다. 외부 장난 기록이 생기면 새 주소로 재배포해 차단하세요.
  */
-var TOKEN = 'CHANGE-ME-팀키';   // 앱 설정의 '팀 키'와 같아야 합니다
 var SHEET_NAME = '제보';
 var PHOTO_FOLDER_ID = '';       // 사진을 드라이브에 저장하려면 폴더 ID 입력 (선택)
 
@@ -26,7 +26,6 @@ function doGet() {
 function doPost(e) {
   try {
     var req = JSON.parse(e.postData.contents);
-    if (String(req.token || '') !== String(TOKEN)) return out_({ ok: false, error: 'bad-token' });
     if (req.action === 'ping') return out_({ ok: true, sheet: SHEET_NAME, count: Math.max(0, sheet_().getLastRow() - 1) });
     if (req.action === 'push') return out_({ ok: true, saved: push_(req.reports || []) });
     if (req.action === 'pull') return out_({ ok: true, reports: pull_() });

@@ -43,8 +43,12 @@ var SPOTS=[
  {id:'f', nm:'중앙시장 뒤 이면도로', lat:37.394100, lon:126.922400}
 ];
 
+/* ───────── 기본 설정 (대원은 주소만 열면 바로 기록됩니다) ───────── */
+var DEFAULT_URL='https://script.google.com/macros/s/AKfycbxB65kvWJOGMGFAnvXkb-L3Gc_ODYRAuGJ13b4OAHuc5GrYLpTB_wcKN7DZqOG2vO7dpQ/exec';
+var DEFAULT_COURSE={nm:'만안 1코스 · 벽산–중앙시장', why:'보행자 사고다발지역 3곳을 지나는 구간입니다.', dist:'', time:'', spots:''};
+
 /* ───────── 상태 ───────── */
-var S={ profile:null, course:{nm:'',why:'',dist:'',time:'',spots:''}, remote:{url:'',token:''},
+var S={ profile:null, course:{nm:DEFAULT_COURSE.nm,why:DEFAULT_COURSE.why,dist:'',time:'',spots:''}, remote:{url:DEFAULT_URL,token:''},
         reports:[], team:[], runs:0, secs:0, run:null, lastSync:0, device:'',
         draft:{photo:null,lat:null,lon:null,acc:null,spot:'',type:null}, syncing:false };
 var $=function(id){ return document.getElementById(id); };
@@ -76,6 +80,8 @@ function load(){
   try{
     var o=JSON.parse(localStorage.getItem(LS)||'null'); if(!o) return false;
     S.profile=o.profile||null; S.course=o.course||S.course; S.remote=o.remote||S.remote; S.device=o.device||'';
+    if(!S.remote || !S.remote.url) S.remote={url:DEFAULT_URL, token:''};
+    if(!S.course || !S.course.nm) S.course={nm:DEFAULT_COURSE.nm, why:DEFAULT_COURSE.why, dist:'', time:'', spots:''};
     S.reports=o.reports||[]; S.team=o.team||[]; S.runs=o.runs||0; S.secs=o.secs||0; S.run=o.run||null; S.lastSync=o.lastSync||0;
     return true;
   }catch(e){ return false; }
