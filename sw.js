@@ -1,5 +1,5 @@
-const CACHE = 'nightwatch-v3';
-const SHELL = ['./','./index.html','./assets/app.css?v=3','./assets/app.js?v=3','./assets/fonts.css',
+const CACHE = 'nightwatch-v4';
+const SHELL = ['./','./index.html','./assets/app.css?v=4','./assets/app.js?v=4','./assets/data.js?v=4','./assets/fonts.css',
                './manifest.webmanifest','./icons/icon-192.png','./icons/icon-512.png'];
 self.addEventListener('install', e => {
   e.waitUntil(caches.open(CACHE).then(c => c.addAll(SHELL)).then(() => self.skipWaiting()));

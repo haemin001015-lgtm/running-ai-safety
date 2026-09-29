@@ -17,7 +17,7 @@
 <link rel="icon" href="./favicon.ico" sizes="any">
 <link rel="icon" type="image/png" href="./icons/icon-192.png">
 <link rel="stylesheet" href="./assets/fonts.css">
-<link rel="stylesheet" href="./assets/app.css?v=3">
+<link rel="stylesheet" href="./assets/app.css?v=4">
 <title>AI 생활안전망 · 청년러닝방범대</title>
 </head>
 <body>
@@ -40,14 +40,24 @@
   <main class="screens" id="screens">
 
     <section class="screen on" id="sc-home" aria-label="순찰">
+      <div class="sect-t" style="margin-top:14px">오늘의 코스</div>
+      <div class="chips" id="courseChips" style="margin:0 0 12px"></div>
+
       <div class="card grad patrol">
-        <span class="badge">오늘의 코스</span>
-        <h2 id="courseNm">순찰 코스</h2>
-        <p class="why" id="courseWhy">설정에서 코스 정보를 입력하세요.</p>
+        <span class="badge" id="courseBadge">매주 월·수 19:30–21:00</span>
+        <h2 id="courseNm">방범코스 1</h2>
+        <p class="why" id="courseWhy"></p>
+        <svg id="courseMap" viewBox="0 0 400 220" role="img" aria-label="코스 지도" style="width:100%;height:auto;margin-top:12px;border-radius:12px;background:#120E24"></svg>
+        <div class="mlg" style="margin-top:8px">
+          <span><i style="background:#A98CFF"></i>코스</span>
+          <span><i style="background:#FF7B9C"></i>사고다발지역</span>
+          <span><i style="background:#5FD3AC"></i>내 위치</span>
+          <button class="act" id="hereBtn" style="margin-left:auto;background:none;border:none">내 위치 보기</button>
+        </div>
         <div class="stats">
-          <div><div class="v" id="csDist">–</div><div class="l">거리</div></div>
-          <div><div class="v" id="csTime">–</div><div class="l">예상</div></div>
-          <div><div class="v" id="csSpots">–</div><div class="l">점검 지점</div></div>
+          <div><div class="v" id="csDist">–</div><div class="l">코스 거리</div></div>
+          <div><div class="v" id="csSpots">–</div><div class="l">경유지</div></div>
+          <div><div class="v" id="csRisk">–</div><div class="l">주변 위험지점</div></div>
         </div>
         <button class="bigbtn" id="runBtn">순찰 시작</button>
         <div class="timer" id="timerBox" style="display:none">
@@ -87,13 +97,11 @@
       <div class="gps">
         <span class="dot2 wait" id="gpsDot"></span>
         <div>
-          <div class="co" id="gpsNm">위치를 불러오세요</div>
+          <div class="co" id="gpsNm">위치 확인 중…</div>
           <div class="cs" id="gpsCo">–</div>
         </div>
-        <button id="gpsBtn" type="button">현재 위치</button>
+        <button id="gpsBtn" type="button">다시 잡기</button>
       </div>
-      <label for="spotSel">가까운 지점 (선택)</label>
-      <select id="spotSel"></select>
 
       <div class="sect-t">3 · 무엇이 문제인가요</div>
       <textarea id="memo" rows="3" placeholder="평소 쓰는 말 그대로 적으세요. 예: 여기 가로등 하나 꺼져있음"></textarea>
@@ -134,8 +142,9 @@
         <div class="s">1365 자원봉사포털 실적 등록 대상</div>
       </div>
       <div class="sect-t">활동 기록</div>
-      <div class="qs">
+      <div class="qs" style="grid-template-columns:repeat(2,1fr)">
         <div class="q"><div class="v" id="mRuns">0</div><div class="l">순찰 횟수</div></div>
+        <div class="q"><div class="v c-lamp" id="mKm">0</div><div class="l">누적 거리(km)</div></div>
         <div class="q"><div class="v c-pri" id="mRep">0</div><div class="l">제보</div></div>
         <div class="q"><div class="v c-ok" id="mFix">0</div><div class="l">개선 확인</div></div>
       </div>
@@ -189,19 +198,13 @@
     <p class="lead">대원 정보와 코스, 팀 저장소를 설정합니다.</p>
     <div class="field"><label for="stName">이름</label><input type="text" id="stName"></div>
     <div class="field"><label for="stCrew">소속 조</label><input type="text" id="stCrew"></div>
-    <div class="sect-t">코스</div>
-    <div class="field"><label for="stCourse">코스 이름</label><input type="text" id="stCourse" placeholder="예: 만안 1코스 · 벽산–중앙시장"></div>
-    <div class="field"><label for="stWhy">코스 설명</label><input type="text" id="stWhy" placeholder="예: 보행자 사고다발지역 3곳을 지나는 구간"></div>
+    <div class="sect-t">코스 거리 (km)</div>
+    <p class="hint" style="margin:0 0 10px">실제 거리를 알면 입력하세요. 비워 두면 기본값을 씁니다.</p>
     <div class="field" style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px">
-      <div><label for="stDist">거리</label><input type="text" id="stDist" placeholder="1.1km"></div>
-      <div><label for="stTime">예상</label><input type="text" id="stTime" placeholder="15분"></div>
-      <div><label for="stSpots">점검 지점</label><input type="text" id="stSpots" placeholder="24"></div>
+      <div><label for="stKm1">코스 1</label><input type="text" id="stKm1" placeholder="2.4"></div>
+      <div><label for="stKm2">코스 2</label><input type="text" id="stKm2" placeholder="2.8"></div>
+      <div><label for="stKm3">코스 3</label><input type="text" id="stKm3" placeholder="3.6"></div>
     </div>
-    <div class="sect-t">팀 저장소</div>
-    <div class="field"><label for="stUrl">저장소 주소 (Apps Script 웹앱 URL)</label><input type="url" id="stUrl" placeholder="https://script.google.com/macros/s/.../exec" autocomplete="off"></div>
-    <div class="field"><label for="stToken">팀 키 (쓰지 않음)</label><input type="text" id="stToken" placeholder="비워 두세요" autocomplete="off"></div>
-    <button class="ghostbtn" id="stTest" style="margin-top:0">연결 테스트</button>
-    <p class="hint" id="stTestMsg">팀 저장소는 이미 연결돼 있습니다. 바꿀 때만 입력하세요.</p>
     <div class="sect-t">데이터</div>
     <button class="ghostbtn" id="stExport" style="margin-top:0">기록 내보내기 (CSV)</button>
     <button class="ghostbtn" id="stReset">이 기기 기록 모두 지우기</button>
@@ -212,6 +215,7 @@
     </div>
   </div>
 </div>
-<script src="./assets/app.js?v=3"></script>
+<script src="./assets/data.js?v=4"></script>
+<script src="./assets/app.js?v=4"></script>
 </body>
 </html>
