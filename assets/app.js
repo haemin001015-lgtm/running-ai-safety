@@ -270,14 +270,24 @@ $('hereBtn').addEventListener('click',function(){ locate(); });
 /* ── 위험지도 화면 ── */
 function drawMap(cs){
   var el=$('map'); if(!el) return;
-  var c=cur(), W=400, H=460, pad=24;
-  var all=cs.map(function(x){ return [x.lat,x.lon]; }).concat(c.pts);
-  HOTSPOTS.forEach(function(h){ if(!c.pts.length || nearHot(c,900).indexOf(h)>-1) all.push([h.lat,h.lon]); });
-  if(!all.length){ el.innerHTML='<text x="200" y="230" text-anchor="middle" fill="#6A6190" font-size="13">제보가 쌓이면 지도가 그려집니다</text>'; return; }
+  var c=cur(), W=400, H=460, pad=30;
+  // 지도 범위: 선택한 코스 + 코스 주변 1.5km 안의 제보만 (멀리 있는 기록 때문에 지도가 눌리지 않도록)
+  var onCourse=function(la,lo){
+    if(!c.pts.length) return true;
+    return c.pts.some(function(p){ return N.dist(p[0],p[1],la,lo)<1500; });
+  };
+  var shown=cs.filter(function(x){ return onCourse(x.lat,x.lon); });
+  var all=c.pts.slice();
+  shown.forEach(function(x){ all.push([x.lat,x.lon]); });
+  if(!all.length){
+    el.innerHTML='<text x="200" y="230" text-anchor="middle" fill="#6A6190" font-size="13">코스를 고르면 지도가 표시됩니다</text>';
+    return;
+  }
   var la=all.map(function(p){ return p[0]; }), lo=all.map(function(p){ return p[1]; });
   var la0=Math.max.apply(null,la), la1=Math.min.apply(null,la), lo0=Math.min.apply(null,lo), lo1=Math.max.apply(null,lo);
-  var dla=Math.max(la0-la1,0.004), dlo=Math.max(lo1-lo0,0.004);
-  la0+=dla*0.1; la1-=dla*0.1; lo0-=dlo*0.1; lo1+=dlo*0.1;
+  var cla=(la0+la1)/2, clo=(lo0+lo1)/2;
+  var dla=Math.max(la0-la1,0.006)*0.72, dlo=Math.max(lo1-lo0,0.008)*0.72;
+  la0=cla+dla; la1=cla-dla; lo0=clo-dlo; lo1=clo+dlo;
   var px=function(v){ return pad+(v-lo0)/(lo1-lo0)*(W-2*pad); }, py=function(v){ return pad+(la0-v)/(la0-la1)*(H-2*pad); };
   var s='<defs><radialGradient id="gw"><stop offset="0%" stop-color="#FFD79A" stop-opacity=".45"/><stop offset="100%" stop-color="#FFD79A" stop-opacity="0"/></radialGradient></defs>';
   for(var g=1;g<6;g++){
@@ -285,20 +295,37 @@ function drawMap(cs){
     s+='<line x1="0" y1="'+(g*H/6)+'" x2="'+W+'" y2="'+(g*H/6)+'" stroke="#fff" stroke-opacity=".04"/>';
   }
   if(c.pts.length>1) s+='<polyline points="'+c.pts.map(function(p){ return px(p[1]).toFixed(1)+','+py(p[0]).toFixed(1); }).join(' ')
-      +'" fill="none" stroke="#A98CFF" stroke-width="2.5" stroke-opacity=".75" stroke-dasharray="7 5"/>';
-  HOTSPOTS.forEach(function(h){
-    var x=px(h.lon), y=py(h.lat); if(x<0||x>W||y<0||y>H) return;
-    s+='<circle cx="'+x.toFixed(1)+'" cy="'+y.toFixed(1)+'" r="16" fill="#FF7B9C" fill-opacity=".12"/><circle cx="'+x.toFixed(1)+'" cy="'+y.toFixed(1)+'" r="4" fill="#FF7B9C"/>'
-      +'<text x="'+(x+8).toFixed(1)+'" y="'+(y-4).toFixed(1)+'" fill="#FFB8CB" font-size="8.5" font-weight="700">'+esc(h.nm)+'</text>';
+      +'" fill="none" stroke="#A98CFF" stroke-width="3" stroke-opacity=".85" stroke-linecap="round" stroke-linejoin="round"/>';
+  c.pts.forEach(function(p,k){
+    var x=px(p[1]), y=py(p[0]), last=k===c.pts.length-1;
+    s+='<circle cx="'+x.toFixed(1)+'" cy="'+y.toFixed(1)+'" r="'+(k===0||last?5:3.5)+'" fill="'+(k===0?'#5FD3AC':last?'#FF7B9C':'#A98CFF')+'"/>';
+    if(c.marks[k]) s+='<text x="'+x.toFixed(1)+'" y="'+(y-9).toFixed(1)+'" fill="#C7BFE8" font-size="8.5" font-weight="700" text-anchor="middle">'+esc(c.marks[k])+'</text>';
   });
-  cs.forEach(function(k,i){
+  // 사고다발지역: 화면 안의 것만, 라벨은 사고건수 상위 4곳만 (겹침 방지)
+  var vis=HOTSPOTS.filter(function(h){
+    var x=px(h.lon), y=py(h.lat); return x>pad-6&&x<W-pad+6&&y>pad&&y<H-pad;
+  }).sort(function(a,b){ return b.cnt-a.cnt; });
+  var placed=[];
+  vis.forEach(function(h,k){
+    var x=px(h.lon), y=py(h.lat);
+    s+='<circle cx="'+x.toFixed(1)+'" cy="'+y.toFixed(1)+'" r="13" fill="#FF7B9C" fill-opacity=".12"/>'
+      +'<circle cx="'+x.toFixed(1)+'" cy="'+y.toFixed(1)+'" r="3.5" fill="#FF7B9C"/>';
+    var far=placed.every(function(q){ return Math.abs(q[0]-x)>52 || Math.abs(q[1]-y)>16; });
+    if(k<6 && far){
+      placed.push([x,y]);
+      s+='<text x="'+(x+7).toFixed(1)+'" y="'+(y+3).toFixed(1)+'" fill="#FFB8CB" font-size="8.5" font-weight="700">'+esc(h.nm)+'</text>';
+    }
+  });
+  shown.forEach(function(k,i){
     var x=px(k.lon), y=py(k.lat), r=6+k.items.length*1.6, done=k.st>=3;
     s+='<circle cx="'+x.toFixed(1)+'" cy="'+y.toFixed(1)+'" r="'+(r+9)+'" fill="url(#gw)" opacity="'+(done?0:.55)+'"/>'
-      +'<circle class="mk" data-i="'+i+'" cx="'+x.toFixed(1)+'" cy="'+y.toFixed(1)+'" r="'+r+'" fill="'+(done?'#5FD3AC':'#FFC97A')+'" stroke="#1B1538" stroke-width="1.5" style="cursor:pointer"/>'
+      +'<circle class="mk" data-i="'+cs.indexOf(k)+'" cx="'+x.toFixed(1)+'" cy="'+y.toFixed(1)+'" r="'+r+'" fill="'+(done?'#5FD3AC':'#FFC97A')+'" stroke="#1B1538" stroke-width="1.5" style="cursor:pointer"/>'
       +'<text x="'+x.toFixed(1)+'" y="'+(y+3.5).toFixed(1)+'" fill="#241A08" font-size="10" font-weight="800" text-anchor="middle" pointer-events="none">'+k.items.length+'</text>';
   });
   if(S.here){ var hx=px(S.here.lon), hy=py(S.here.lat);
-    if(hx>=0&&hx<=W&&hy>=0&&hy<=H) s+='<circle cx="'+hx.toFixed(1)+'" cy="'+hy.toFixed(1)+'" r="5" fill="#5FD3AC" stroke="#0B0818" stroke-width="1.5"/>'; }
+    if(hx>=0&&hx<=W&&hy>=0&&hy<=H) s+='<circle cx="'+hx.toFixed(1)+'" cy="'+hy.toFixed(1)+'" r="11" fill="#5FD3AC" fill-opacity=".22"/><circle cx="'+hx.toFixed(1)+'" cy="'+hy.toFixed(1)+'" r="5" fill="#5FD3AC" stroke="#0B0818" stroke-width="1.5"/>'; }
+  var off=cs.length-shown.length;
+  if(off>0) s+='<text x="'+(W-10)+'" y="'+(H-10)+'" text-anchor="end" fill="#6A6190" font-size="9">코스 밖 제보 '+off+'건은 표시하지 않음</text>';
   el.innerHTML=s;
   Array.prototype.forEach.call(el.querySelectorAll('.mk'),function(m){
     m.addEventListener('click',function(){ openSheet(cs[+m.getAttribute('data-i')]); });
