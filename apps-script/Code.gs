@@ -10,7 +10,7 @@ var PHOTO_FOLDER_ID = '';       // 사진을 드라이브에 저장하려면 폴
 
 var HEAD = ['id','일시','대원','조','기기','위도','경도','정확도','지점','유형','메모','상태','사진','수정시각','코스'];
 var RUN_SHEET = '순찰';
-var RUN_HEAD = ['id','일시','대원','조','기기','코스','시간(분)','거리(km)','수정시각'];
+var RUN_HEAD = ['id','일시','대원','조','기기','코스','시간(분)','거리(km)','제보수','특이사항','수정시각'];
 
 function sheet_() { return tab_(SHEET_NAME, HEAD); }
 function runSheet_() { return tab_(RUN_SHEET, RUN_HEAD); }
@@ -78,7 +78,7 @@ function pushRuns_(runs) {
     var now = new Date(), added = 0;
     runs.forEach(function (p) {
       if (ids.indexOf(String(p.id)) > -1) return;               // 이미 저장된 순찰은 건너뜀
-      sh.appendRow([p.id, p.at, p.name, p.crew, p.device, p.course, Number(p.mins) || 0, Number(p.km) || 0, now]);
+      sh.appendRow([p.id, p.at, p.name, p.crew, p.device, p.course, Number(p.mins) || 0, Number(p.km) || 0, Number(p.reports) || 0, p.note || '', now]);
       ids.push(String(p.id)); added++;
     });
     return added;

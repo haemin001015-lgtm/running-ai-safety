@@ -117,7 +117,7 @@ function syncNow(manual){
   var runs=pendingRuns();
   return api('push',{reports:pending().map(toWire), patrols:runs.map(function(p){
       return {id:p.id, at:p.at, device:S.device, name:(S.profile&&S.profile.name)||'', crew:(S.profile&&S.profile.crew)||'',
-              course:p.course, mins:Math.round(p.secs/60), km:p.km};
+              course:p.course, mins:Math.round(p.secs/60), km:p.km, note:p.note||'', reports:p.reports||0};
     })})
     .then(function(){
       S.reports.forEach(function(r){ r.synced=true; });
@@ -516,11 +516,37 @@ $('runBtn').addEventListener('click',function(){
   var el=Math.floor((Date.now()-S.run.start)/1000);
   if(el<60 && !confirm('1분도 지나지 않았습니다. 순찰을 종료할까요?')) return;
   var c=N.courseOf(S.run.course||S.courseId), km=c.pts.length? N.kmOf(c):0;
+  var startedAt=S.run.start;
+  var during=S.reports.filter(function(r){ return new Date(r.at).getTime()>=startedAt; }).length;
   S.secs+=el; S.runs++; S.km+=km;
-  S.patrols.push({id:'p'+Date.now().toString(36), at:new Date().toISOString(), course:c.nm, secs:el, km:km, synced:false});
+  var rec={id:'p'+Date.now().toString(36), at:new Date().toISOString(), course:c.nm, secs:el, km:km, note:'', reports:during, synced:false};
+  S.patrols.push(rec);
   S.run=null; N.save(); runUI(); render(); N.syncNow();
   toast('순찰 종료 · '+N.hms(el)+(km?' · '+km.toFixed(1)+'km 적립':''));
+  if(during===0) askNoIssue(rec);
 });
+
+/* ── 순찰 종료 후: 제보 0건일 때 이상 없음 확인 ── */
+function askNoIssue(rec){
+  $('sheet').innerHTML='<div class="grab"></div>'
+    +'<h3>이번 순찰, 특이사항이 있었나요?</h3>'
+    +'<p class="sub">제보가 한 건도 없었습니다. 실제로 이상이 없었다면 그것도 기록으로 남깁니다.</p>'
+    +'<div class="kv"><span class="k">코스</span><span class="v">'+esc(rec.course)+'</span></div>'
+    +'<div class="kv"><span class="k">순찰 시간</span><span class="v">'+N.hms(rec.secs)+'</span></div>'
+    +'<div class="kv" style="border:none"><span class="k">거리</span><span class="v">'+(rec.km?rec.km.toFixed(1)+'km':'–')+'</span></div>'
+    +'<div class="sheetbtns">'
+    +'<button class="gh" id="niReport">제보 남기기</button>'
+    +'<button id="niOk">이상 없음으로 기록</button></div>'
+    +'<p class="hint" style="text-align:center">이상 없음도 순찰을 돌았다는 기록으로 남아, 크루장 시트에서 확인됩니다.</p>';
+  $('sheet').classList.add('on'); $('mask').classList.add('on');
+  $('niOk').addEventListener('click',function(){
+    rec.note='이상 없음'; rec.synced=false; N.save(); closeSheet(); N.syncNow(true);
+    toast('이상 없음으로 기록했습니다');
+  });
+  $('niReport').addEventListener('click',function(){
+    closeSheet(); document.querySelector('.tab[data-go=add]').click();
+  });
+}
 
 /* ── 온보딩 · 설정 ── */
 $('obStart').addEventListener('click',function(){
