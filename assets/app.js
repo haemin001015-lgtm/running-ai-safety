@@ -272,15 +272,19 @@ function drawMap(cs){
   var el=$('map'); if(!el) return;
   var c=cur(), W=400, H=460, pad=30;
   // 지도 범위: 선택한 코스 + 코스 주변 1.5km 안의 제보만 (멀리 있는 기록 때문에 지도가 눌리지 않도록)
+  var anchor=c.pts.length? null : (S.here? [S.here.lat,S.here.lon]
+             : (cs.length? [cs[0].lat,cs[0].lon] : null));
   var onCourse=function(la,lo){
-    if(!c.pts.length) return true;
-    return c.pts.some(function(p){ return N.dist(p[0],p[1],la,lo)<1500; });
+    if(c.pts.length) return c.pts.some(function(p){ return N.dist(p[0],p[1],la,lo)<1500; });
+    if(!anchor) return true;
+    return N.dist(anchor[0],anchor[1],la,lo)<3000;   // 기타 모드: 내 위치(없으면 최근 제보) 3km 이내
   };
   var shown=cs.filter(function(x){ return onCourse(x.lat,x.lon); });
   var all=c.pts.slice();
   shown.forEach(function(x){ all.push([x.lat,x.lon]); });
+  if(!c.pts.length && anchor) all.push(anchor);
   if(!all.length){
-    el.innerHTML='<text x="200" y="230" text-anchor="middle" fill="#6A6190" font-size="13">코스를 고르면 지도가 표시됩니다</text>';
+    el.innerHTML='<text x="200" y="230" text-anchor="middle" fill="#6A6190" font-size="13">제보가 쌓이면 이 자리에 지도가 그려집니다</text>';
     return;
   }
   var la=all.map(function(p){ return p[0]; }), lo=all.map(function(p){ return p[1]; });
