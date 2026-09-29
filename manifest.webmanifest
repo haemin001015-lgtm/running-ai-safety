@@ -1,0 +1,17 @@
+{
+  "name": "AI 생활안전망 · 청년러닝방범대",
+  "short_name": "생활안전망",
+  "description": "야간 순찰 중 발견한 밤길 위험을 기록하고 민원까지 연결하는 앱",
+  "start_url": "./",
+  "scope": "./",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#0B0818",
+  "theme_color": "#0B0818",
+  "lang": "ko",
+  "icons": [
+    { "src": "./icons/icon-192.png", "sizes": "192x192", "type": "image/png" },
+    { "src": "./icons/icon-512.png", "sizes": "512x512", "type": "image/png" },
+    { "src": "./icons/icon-maskable-512.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable" }
+  ]
+}
