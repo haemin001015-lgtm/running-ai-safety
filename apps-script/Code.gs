@@ -8,9 +8,9 @@
 var SHEET_NAME = '제보';
 var PHOTO_FOLDER_ID = '';       // 사진을 드라이브에 저장하려면 폴더 ID 입력 (선택)
 
-var HEAD = ['id','일시','대원','조','기기','위도','경도','정확도','지점','유형','메모','상태','사진','수정시각','코스'];
+var HEAD = ['id','일시','대원','뒷4자리','기기','위도','경도','정확도','지점','유형','메모','상태','사진','수정시각','코스'];
 var RUN_SHEET = '순찰';
-var RUN_HEAD = ['id','일시','대원','조','기기','코스','시간(분)','거리(km)','제보수','특이사항','수정시각'];
+var RUN_HEAD = ['id','일시','대원','뒷4자리','기기','코스','시간(분)','거리(km)','제보수','특이사항','수정시각'];
 
 function sheet_() { return tab_(SHEET_NAME, HEAD); }
 function runSheet_() { return tab_(RUN_SHEET, RUN_HEAD); }
@@ -35,7 +35,7 @@ function doPost(e) {
     var req = JSON.parse(e.postData.contents);
     if (req.action === 'ping') return out_({ ok: true, sheet: SHEET_NAME, count: Math.max(0, sheet_().getLastRow() - 1) });
     if (req.action === 'push') return out_({ ok: true, saved: push_(req.reports || []), runs: pushRuns_(req.patrols || []) });
-    if (req.action === 'pull') return out_({ ok: true, reports: pull_() });
+    if (req.action === 'pull') return out_({ ok: true, reports: pull_(), patrols: pullRuns_() });
     return out_({ ok: false, error: 'unknown-action' });
   } catch (err) {
     return out_({ ok: false, error: String(err) });
@@ -53,7 +53,7 @@ function push_(reports) {
     var added = 0;
     reports.forEach(function (r) {
       var photo = r.photo ? savePhoto_(r) : '';
-      var row = [r.id, r.at, r.name, r.crew, r.device, r.lat, r.lon, r.acc, r.spot, r.type, r.memo, Number(r.st) || 0, photo, now, r.course || ''];
+      var row = [r.id, r.at, r.name, r.tail, r.device, r.lat, r.lon, r.acc, r.spot, r.type, r.memo, Number(r.st) || 0, photo, now, r.course || ''];
       var i = ids.indexOf(String(r.id));
       if (i === -1) { sh.appendRow(row); ids.push(String(r.id)); added++; }
       else {
@@ -78,11 +78,21 @@ function pushRuns_(runs) {
     var now = new Date(), added = 0;
     runs.forEach(function (p) {
       if (ids.indexOf(String(p.id)) > -1) return;               // 이미 저장된 순찰은 건너뜀
-      sh.appendRow([p.id, p.at, p.name, p.crew, p.device, p.course, Number(p.mins) || 0, Number(p.km) || 0, Number(p.reports) || 0, p.note || '', now]);
+      sh.appendRow([p.id, p.at, p.name, p.tail, p.device, p.course, Number(p.mins) || 0, Number(p.km) || 0, Number(p.reports) || 0, p.note || '', now]);
       ids.push(String(p.id)); added++;
     });
     return added;
   } finally { lock.releaseLock(); }
+}
+function pullRuns_() {
+  var sh = runSheet_();
+  var last = sh.getLastRow();
+  if (last < 2) return [];
+  var vals = sh.getRange(2, 1, last - 1, RUN_HEAD.length).getValues();
+  return vals.filter(function (v) { return v[0]; }).map(function (v) {
+    return { id: v[0], at: v[1] instanceof Date ? v[1].toISOString() : String(v[1]), name: v[2], tail: v[3],
+             course: v[5], mins: Number(v[6]) || 0, km: Number(v[7]) || 0, reports: Number(v[8]) || 0, note: v[9] || '' };
+  });
 }
 function savePhoto_(r) {
   if (!PHOTO_FOLDER_ID) return '';
@@ -101,7 +111,7 @@ function pull_() {
   if (last < 2) return [];
   var vals = sh.getRange(2, 1, last - 1, HEAD.length).getValues();
   return vals.filter(function (v) { return v[0]; }).map(function (v) {
-    return { id: v[0], at: v[1] instanceof Date ? v[1].toISOString() : String(v[1]), name: v[2], crew: v[3], device: v[4],
+    return { id: v[0], at: v[1] instanceof Date ? v[1].toISOString() : String(v[1]), name: v[2], tail: v[3], device: v[4],
              lat: v[5], lon: v[6], acc: v[7], spot: v[8], type: v[9], memo: v[10], st: Number(v[11]) || 0, photo: '', course: v[14] || '' };
   });
 }

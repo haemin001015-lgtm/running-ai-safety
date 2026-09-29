@@ -51,7 +51,7 @@ function classify(m){
 
 /* ───────── 상태 ───────── */
 var S={ profile:null, courseId:'1', courseKm:{}, remote:{url:DEFAULT_URL, token:''},
-        reports:[], team:[], patrols:[], runs:0, secs:0, km:0, run:null, lastSync:0, device:'',
+        reports:[], team:[], teamRuns:[], patrols:[], runs:0, secs:0, km:0, run:null, lastSync:0, device:'',
         here:null, draft:{photo:null,lat:null,lon:null,acc:null}, syncing:false, retry:0 };
 var $=function(id){ return document.getElementById(id); };
 function esc(t){ return String(t==null?'':t).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
@@ -70,7 +70,7 @@ function hms(s){
 
 /* ───────── 저장 ───────── */
 function snap(){ return {v:3, profile:S.profile, courseId:S.courseId, courseKm:S.courseKm, remote:S.remote, device:S.device,
-  reports:S.reports, team:S.team, patrols:S.patrols, runs:S.runs, secs:S.secs, km:S.km, run:S.run, lastSync:S.lastSync}; }
+  reports:S.reports, team:S.team, teamRuns:S.teamRuns, patrols:S.patrols, runs:S.runs, secs:S.secs, km:S.km, run:S.run, lastSync:S.lastSync}; }
 function save(){
   try{ localStorage.setItem(LS, JSON.stringify(snap())); }
   catch(e){
@@ -84,7 +84,7 @@ function load(){
     var o=JSON.parse(localStorage.getItem(LS)||'null'); if(!o) return false;
     S.profile=o.profile||null; S.courseId=o.courseId||'1'; S.courseKm=o.courseKm||{};
     S.remote=(o.remote&&o.remote.url)?o.remote:{url:DEFAULT_URL,token:''};
-    S.device=o.device||''; S.reports=o.reports||[]; S.team=o.team||[]; S.patrols=o.patrols||[];
+    S.device=o.device||''; S.reports=o.reports||[]; S.team=o.team||[]; S.teamRuns=o.teamRuns||[]; S.patrols=o.patrols||[];
     S.runs=o.runs||0; S.secs=o.secs||0; S.km=o.km||0; S.run=o.run||null; S.lastSync=o.lastSync||0;
     return true;
   }catch(e){ return false; }
@@ -103,11 +103,11 @@ function api(action, payload){
 function pending(){ return S.reports.filter(function(r){ return !r.synced; }); }
 function pendingRuns(){ return S.patrols.filter(function(p){ return !p.synced; }); }
 function toWire(r){
-  return {id:r.id, at:r.at, device:S.device, name:(r.by&&r.by.name)||'', crew:(r.by&&r.by.crew)||'',
+  return {id:r.id, at:r.at, device:S.device, name:(r.by&&r.by.name)||'', tail:(r.by&&r.by.tail)||'',
           course:r.course||'', lat:r.lat, lon:r.lon, acc:r.acc, spot:r.spot, memo:r.memo, type:r.type, st:r.st, photo:r.photo||''};
 }
 function fromWire(w){
-  return {id:w.id, at:w.at, by:{name:w.name,crew:w.crew}, course:w.course, lat:+w.lat, lon:+w.lon, acc:+w.acc||null,
+  return {id:w.id, at:w.at, by:{name:w.name,tail:w.tail}, course:w.course, lat:+w.lat, lon:+w.lon, acc:+w.acc||null,
           spot:w.spot, memo:w.memo, type:w.type, st:+w.st||0, photo:'', synced:true};
 }
 function syncNow(manual){
@@ -117,7 +117,7 @@ function syncNow(manual){
   S.syncing=true; setSync('ok','동기화 중…');
   var runs=pendingRuns();
   return api('push',{reports:pending().map(toWire), patrols:runs.map(function(p){
-      return {id:p.id, at:p.at, device:S.device, name:(S.profile&&S.profile.name)||'', crew:(S.profile&&S.profile.crew)||'',
+      return {id:p.id, at:p.at, device:S.device, name:(S.profile&&S.profile.name)||'', tail:(S.profile&&S.profile.tail)||'',
               course:p.course, mins:Math.round(p.secs/60), km:p.km, note:p.note||'', reports:p.reports||0};
     })})
     .then(function(){
@@ -127,6 +127,7 @@ function syncNow(manual){
     })
     .then(function(j){
       S.team=(j.reports||[]).map(fromWire);
+      S.teamRuns=j.patrols||[];
       S.team.forEach(function(t){
         var mine=S.reports.filter(function(r){ return r.id===t.id; })[0];
         if(mine && t.st>mine.st) mine.st=t.st;
@@ -184,7 +185,7 @@ function docText(c){
     +'○ 요청 사항 : '+c.type.ask+'\n'
     +'○ 데이터 근거 : 공공데이터포털\n             15105289, 15017320\n\n'
     +'청년러닝방범대 야간 정기순찰 중 확인'
-    +(S.profile? '\n기록: '+S.profile.name+' ('+S.profile.crew+')':'');
+    +(S.profile? '\n기록: '+S.profile.name+' 대원':'');
 }
 window.__nw={S:S,TYPES:TYPES,COURSES:COURSES,STEPS:STEPS,HOTSPOTS:HOTSPOTS,LIGHTS:LIGHTS,VER:VER,
   cluster:cluster,classify:classify,docText:docText,api:api,syncNow:syncNow,save:save,load:load,
@@ -354,9 +355,23 @@ function drawMap(cs){
 }
 
 /* ── 전체 렌더 ── */
+
+/* 같은 이름·조면 어느 기기에서든 누적이 이어지도록 서버 기록으로 집계 */
+function myTotals(){
+  var nm=(S.profile&&S.profile.name)||'', tl=(S.profile&&S.profile.tail)||'';
+  var mine=(S.teamRuns||[]).filter(function(p){ return p.name===nm && String(p.tail||'')===tl; });
+  var ids={}; mine.forEach(function(p){ ids[p.id]=1; });
+  var localOnly=S.patrols.filter(function(p){ return !ids[p.id]; });
+  var runs=mine.length+localOnly.length;
+  var secs=mine.reduce(function(a,p){ return a+(p.mins||0)*60; },0)+localOnly.reduce(function(a,p){ return a+(p.secs||0); },0);
+  var km=mine.reduce(function(a,p){ return a+(p.km||0); },0)+localOnly.reduce(function(a,p){ return a+(p.km||0); },0);
+  var reps=N.allReports().filter(function(r){ return r.by && r.by.name===nm && String(r.by.tail||'')===tl; });
+  return {runs:runs, secs:secs, km:km, reports:reps};
+}
+
 function render(){
   var cs=N.cluster(), mine=S.reports.slice().sort(function(a,b){ return a.at<b.at?1:-1; });
-  $('crewLine').textContent=S.profile? '청년러닝방범대 · '+S.profile.crew : '청년러닝방범대';
+  $('crewLine').textContent=S.profile? '청년러닝방범대 · '+S.profile.name : '청년러닝방범대';
   renderCourse();
   $('qRep').textContent=N.allReports().length;
   $('qWait').textContent=cs.filter(function(c){ return c.st<2; }).length;
@@ -385,11 +400,12 @@ function render(){
   Array.prototype.forEach.call($('listRank').querySelectorAll('.item'),function(el){
     el.addEventListener('click',function(){ openSheet(cs[+el.getAttribute('data-i')]); });
   });
-  $('volH').textContent=Math.floor(S.secs/3600)+'시간 '+Math.floor(S.secs%3600/60)+'분';
-  $('mRuns').textContent=S.runs; $('mKm').textContent=S.km.toFixed(1); $('mRep').textContent=S.reports.length;
-  $('mFix').textContent=cs.filter(function(c){ return c.st>=3 && c.items.some(function(r){ return S.reports.some(function(x){ return x.id===r.id; }); }); }).length;
+  var T=myTotals();
+  $('volH').textContent=Math.floor(T.secs/3600)+'시간 '+Math.floor(T.secs%3600/60)+'분';
+  $('mRuns').textContent=T.runs; $('mKm').textContent=T.km.toFixed(1); $('mRep').textContent=T.reports.length;
+  $('mFix').textContent=cs.filter(function(c){ return c.st>=3 && c.items.some(function(r){ return T.reports.some(function(x){ return x.id===r.id; }); }); }).length;
   $('meNm').textContent=S.profile? S.profile.name:'대원';
-  $('meRl').textContent=S.profile? '청년러닝방범대 · '+S.profile.crew:'청년러닝방범대';
+  $('meRl').textContent='청년러닝방범대';
   $('meLamp').textContent=cs.filter(function(c){ return c.st>=3; }).length+'곳이 개선됐습니다';
 }
 N.render=render;
@@ -507,7 +523,7 @@ $('submitBtn').addEventListener('click',function(){
   if(S.draft.lat==null){ grabGps(); toast('위치를 잡는 중입니다. 잠시 후 다시 눌러주세요'); return; }
   if(!S.profile){ $('onboard').classList.add('on'); return; }
   var t=S.draft.type? N.typeOf(S.draft.type):N.classify(memo);
-  S.reports.push({id:N.uid(), at:new Date().toISOString(), by:{name:S.profile.name,crew:S.profile.crew},
+  S.reports.push({id:N.uid(), at:new Date().toISOString(), by:{name:S.profile.name,tail:S.profile.tail},
     course:cur().nm, lat:S.draft.lat, lon:S.draft.lon, acc:S.draft.acc, spot:S.draft.spot||'현재 위치',
     memo:memo, type:t.t, st:0, photo:S.draft.photo||'', synced:false});
   $('memo').value=''; $('auto').classList.remove('show'); S.draft.type=null;
@@ -567,14 +583,15 @@ function askNoIssue(rec){
 
 /* ── 온보딩 · 설정 ── */
 $('obStart').addEventListener('click',function(){
-  var n=$('obName').value.trim(), c=$('obCrew').value.trim()||'청년러닝방범대';
+  var n=$('obName').value.trim(), t=($('obTail').value||'').replace(/[^0-9]/g,'');
   if(!n){ $('obName').focus(); toast('이름을 입력해 주세요'); return; }
+  if(t.length!==4){ $('obTail').focus(); toast('휴대폰 뒷 4자리를 입력해 주세요'); return; }
   if(!$('obAgree').checked){ toast('안내에 동의해 주세요'); return; }
-  S.profile={name:n, crew:c}; if(!S.device) S.device='d'+Math.random().toString(36).slice(2,10);
+  S.profile={name:n, tail:t}; if(!S.device) S.device='d'+Math.random().toString(36).slice(2,10);
   N.save(); $('onboard').classList.remove('on'); render(); N.syncNow(); toast('환영합니다, '+n+' 대원');
 });
 function openSettings(){
-  $('stName').value=S.profile?S.profile.name:''; $('stCrew').value=S.profile?S.profile.crew:'';
+  $('stName').value=S.profile?S.profile.name:''; $('stTail').value=S.profile?(S.profile.tail||''):'';
   $('stKm1').value=S.courseKm['1']||''; $('stKm2').value=S.courseKm['2']||''; $('stKm3').value=S.courseKm['3']||'';
   if($('verLine')) $('verLine').textContent='버전 '+N.VER+(S.lastSync?' · 마지막 동기화 '+new Date(S.lastSync).toLocaleString('ko-KR'):'');
   $('settings').classList.add('on');
@@ -582,16 +599,18 @@ function openSettings(){
 $('setBtn').addEventListener('click',openSettings);
 $('stClose').addEventListener('click',function(){ $('settings').classList.remove('on'); });
 $('stSave').addEventListener('click',function(){
-  var n=$('stName').value.trim(); if(!n){ toast('이름을 입력해 주세요'); return; }
-  S.profile={name:n, crew:$('stCrew').value.trim()||'청년러닝방범대'};
+  var n=$('stName').value.trim(), t=($('stTail').value||'').replace(/[^0-9]/g,'');
+  if(!n){ toast('이름을 입력해 주세요'); return; }
+  if(t.length!==4){ toast('휴대폰 뒷 4자리를 입력해 주세요'); return; }
+  S.profile={name:n, tail:t};
   ['1','2','3'].forEach(function(k){ var v=$('stKm'+k).value.trim(); if(v) S.courseKm[k]=v; else delete S.courseKm[k]; });
   if(!S.device) S.device='d'+Math.random().toString(36).slice(2,10);
   N.save(); $('settings').classList.remove('on'); render(); toast('설정을 저장했습니다');
 });
 function csv(){
-  var rows=[['id','일시','대원','조','코스','위도','경도','정확도(m)','지점','유형','메모','상태','동기화']];
+  var rows=[['id','일시','대원','뒷4자리','코스','위도','경도','정확도(m)','지점','유형','메모','상태','동기화']];
   N.allReports().forEach(function(r){
-    rows.push([r.id,r.at,(r.by&&r.by.name)||'',(r.by&&r.by.crew)||'',r.course||'',r.lat,r.lon,r.acc||'',r.spot,r.type,
+    rows.push([r.id,r.at,(r.by&&r.by.name)||'',(r.by&&r.by.tail)||'',r.course||'',r.lat,r.lon,r.acc||'',r.spot,r.type,
                (r.memo||'').replace(/"/g,'""'),STEPS[r.st],r.synced?'완료':'대기']);
   });
   rows.push([]); rows.push(['순찰기록','일시','코스','시간(분)','거리(km)']);
@@ -604,7 +623,7 @@ function download(){
   document.body.appendChild(a); a.click(); document.body.removeChild(a);
   setTimeout(function(){ URL.revokeObjectURL(u); },1000); toast('CSV로 내보냈습니다');
 }
-$('expBtn').addEventListener('click',download); $('stExport').addEventListener('click',download);
+var eb=$('expBtn'); if(eb) eb.addEventListener('click',download); $('stExport').addEventListener('click',download);
 $('stReset').addEventListener('click',function(){
   if(!confirm('이 기기에 저장된 제보·순찰 기록을 모두 지웁니다. 계속할까요?')) return;
   S.reports=[]; S.team=[]; S.patrols=[]; S.runs=0; S.secs=0; S.km=0; S.run=null; N.save(); render(); runUI(); toast('기록을 지웠습니다');
@@ -615,7 +634,7 @@ $('syncBtn').addEventListener('click',function(){ N.syncNow(true); });
 N.load();
 if(!S.device) S.device='d'+Math.random().toString(36).slice(2,10);
 renderChips(); render(); runUI();
-if(!S.profile) $('onboard').classList.add('on');
+if(!S.profile || !S.profile.tail) $('onboard').classList.add('on');
 N.setSync('ok','동기화 준비됨');
 N.syncNow();
 locate(function(){ drawCourseMap(); });
