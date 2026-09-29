@@ -410,19 +410,11 @@ function render(){
   $('mFix').textContent=cs.filter(function(c){ return c.st>=3 && c.items.some(function(r){ return T.reports.some(function(x){ return x.id===r.id; }); }); }).length;
   $('meNm').textContent=S.profile? S.profile.name:'대원';
   $('meRl').textContent='청년러닝방범대';
-  renderSeason(T, Number($('mFix').textContent)||0);
+  renderBadges(T, Number($('mFix').textContent)||0);
 }
 
-/* ── 시즌 진행 · 배지 ── */
-var SEASON_GOAL=7;                                  // 대회 기간 정기 순찰 횟수
-function renderSeason(T, fixed){
-  var done=Math.min(T.runs,SEASON_GOAL), pct=Math.round(done/SEASON_GOAL*100);
-  $('sRunT').textContent=T.runs+' / '+SEASON_GOAL;
-  $('sBar').style.width=Math.min(100,pct)+'%';
-  $('sMsg').textContent = T.runs===0 ? '첫 순찰을 기다리고 있어요'
-    : T.runs>=SEASON_GOAL ? '정기 순찰 전 회차 완주 · 고생 많았습니다'
-    : '앞으로 '+(SEASON_GOAL-T.runs)+'번 더 달리면 완주예요';
-
+/* ── 배지 ── */
+function renderBadges(T, fixed){
   var courses={}; (S.patrols||[]).forEach(function(p){ if(p.course) courses[p.course]=1; });
   (S.teamRuns||[]).forEach(function(p){ if(p.mine && p.course) courses[p.course]=1; });
   var nCourse=Object.keys(courses).length;
