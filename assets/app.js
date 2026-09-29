@@ -1,6 +1,6 @@
 (function(){
 'use strict';
-var VER='2.0.0', LS='nightwatch:v2';
+var VER='2.1.0', LS='nightwatch:v2';
 var DEFAULT_URL='https://script.google.com/macros/s/AKfycbxB65kvWJOGMGFAnvXkb-L3Gc_ODYRAuGJ13b4OAHuc5GrYLpTB_wcKN7DZqOG2vO7dpQ/exec';
 
 /* ───────── 방범코스 (매주 월·수 19:30–21:00) ───────── */
@@ -54,7 +54,7 @@ var S={ profile:null, courseId:'1', courseKm:{}, remote:{url:DEFAULT_URL, token:
         reports:[], team:[], teamRuns:[], patrols:[], runs:0, secs:0, km:0, run:null, lastSync:0, device:'',
         here:null, draft:{photo:null,lat:null,lon:null,acc:null}, syncing:false, retry:0 };
 var $=function(id){ return document.getElementById(id); };
-function esc(t){ return String(t==null?'':t).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+function esc(t){ return String(t==null?'':t).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;'); }
 function uid(){ return 'r'+Date.now().toString(36)+Math.random().toString(36).slice(2,7); }
 function dist(a1,o1,a2,o2){
   var R=6371000,t=Math.PI/180,dA=(a2-a1)*t,dO=(o2-o1)*t;
@@ -107,7 +107,7 @@ function toWire(r){
           course:r.course||'', lat:r.lat, lon:r.lon, acc:r.acc, spot:r.spot, memo:r.memo, type:r.type, st:r.st, photo:r.photo||''};
 }
 function fromWire(w){
-  return {id:w.id, at:w.at, by:{name:w.name,tail:w.tail}, course:w.course, lat:+w.lat, lon:+w.lon, acc:+w.acc||null,
+  return {id:w.id, at:w.at, by:{name:w.name, mine:!!w.mine}, course:w.course, lat:+w.lat, lon:+w.lon, acc:+w.acc||null,
           spot:w.spot, memo:w.memo, type:w.type, st:+w.st||0, photo:'', synced:true};
 }
 function syncNow(manual){
@@ -123,7 +123,7 @@ function syncNow(manual){
     .then(function(){
       S.reports.forEach(function(r){ r.synced=true; });
       S.patrols.forEach(function(p){ p.synced=true; });
-      return api('pull',{});
+      return api('pull',{me:{name:(S.profile&&S.profile.name)||'', tail:(S.profile&&S.profile.tail)||''}});
     })
     .then(function(j){
       S.team=(j.reports||[]).map(fromWire);
@@ -359,13 +359,13 @@ function drawMap(cs){
 /* 같은 이름·조면 어느 기기에서든 누적이 이어지도록 서버 기록으로 집계 */
 function myTotals(){
   var nm=(S.profile&&S.profile.name)||'', tl=(S.profile&&S.profile.tail)||'';
-  var mine=(S.teamRuns||[]).filter(function(p){ return p.name===nm && String(p.tail||'')===tl; });
+  var mine=(S.teamRuns||[]).filter(function(p){ return p.mine || (p.name===nm && String(p.tail||'')===tl); });
   var ids={}; mine.forEach(function(p){ ids[p.id]=1; });
   var localOnly=S.patrols.filter(function(p){ return !ids[p.id]; });
   var runs=mine.length+localOnly.length;
   var secs=mine.reduce(function(a,p){ return a+(p.mins||0)*60; },0)+localOnly.reduce(function(a,p){ return a+(p.secs||0); },0);
   var km=mine.reduce(function(a,p){ return a+(p.km||0); },0)+localOnly.reduce(function(a,p){ return a+(p.km||0); },0);
-  var reps=N.allReports().filter(function(r){ return r.by && r.by.name===nm && String(r.by.tail||'')===tl; });
+  var reps=N.allReports().filter(function(r){ return r.by && (r.by.mine || (r.by.name===nm && String(r.by.tail||'')===tl)); });
   return {runs:runs, secs:secs, km:km, reports:reps};
 }
 

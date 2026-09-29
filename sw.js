@@ -1,4 +1,4 @@
-const CACHE = 'nightwatch-v12';
+const CACHE = 'nightwatch-v13';
 const SHELL = ['./','./index.html','./assets/app.css?v=11','./assets/app.js?v=11','./assets/data.js?v=11','./assets/fonts.css',
                './manifest.webmanifest','./icons/icon-192.png','./icons/icon-512.png'];
 self.addEventListener('install', e => {
